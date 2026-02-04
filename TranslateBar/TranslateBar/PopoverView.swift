@@ -22,6 +22,8 @@ struct PopoverView: View {
             if !viewModel.statusMessage.isEmpty {
                 statusSection
             }
+
+            footerSection
         }
         .padding(14)
         .frame(width: 280)
@@ -48,7 +50,7 @@ struct PopoverView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            Image(systemName: "globe")
+            Image(systemName: "globe.americas.fill")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.accentColor)
 
@@ -332,6 +334,19 @@ struct PopoverView: View {
         }
     }
 
+    // MARK: - Footer Section
+
+    private var footerSection: some View {
+        HStack(spacing: 12) {
+            FeedbackMenu()
+
+            Spacer()
+
+            QuitButton()
+        }
+        .padding(.top, 8)
+    }
+
     // MARK: - Helpers
 
     private var statusIcon: String {
@@ -361,6 +376,65 @@ struct PopoverView: View {
             return .red
         } else {
             return .blue
+        }
+    }
+}
+
+// MARK: - Footer Components
+
+private struct FeedbackMenu: View {
+    @State private var isHovered = false
+
+    var body: some View {
+        Menu {
+            Button {
+                if let url = URL(string: "https://mail.google.com/mail/?view=cm&to=dvzgrz@gmail.com&su=TransLite%20Feedback") {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                Label("Send an email", systemImage: "envelope")
+            }
+
+            Button {
+                if let url = URL(string: "https://x.com/messages/compose?recipient_id=1164799217748942849") {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                Label("Message on X", systemImage: "at")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "bubble.left")
+                    .font(.system(size: 11, weight: .medium))
+                Text("Feedback")
+                    .font(.system(size: 10))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 7, weight: .semibold))
+            }
+            .foregroundColor(isHovered ? .primary : .secondary)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+private struct QuitButton: View {
+    @State private var isHovered = false
+
+    var body: some View {
+        Button {
+            NSApplication.shared.terminate(nil)
+        } label: {
+            Image(systemName: "power")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(isHovered ? .primary : .secondary)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 }

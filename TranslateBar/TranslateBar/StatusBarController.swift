@@ -30,7 +30,7 @@ final class StatusBarController {
 
         // Configure status item button
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "TransLite")
+            button.image = NSImage(systemSymbolName: "globe.americas.fill", accessibilityDescription: "TransLite")
             button.action = #selector(handleClick)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -117,7 +117,7 @@ final class StatusBarController {
         animationTimer?.invalidate()
         animationTimer = nil
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "TransLite")
+            button.image = NSImage(systemSymbolName: "globe.americas.fill", accessibilityDescription: "TransLite")
         }
     }
 }
