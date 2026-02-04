@@ -16,6 +16,7 @@
 		6DA2819C787E1B9AAB2B47B3 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054B50C9C983409DF8DB0202 /* KeychainHelper.swift */; };
 		7D5EB3F5817E5F257F16127B /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0854A02989745CFFB5694ACC /* PopoverView.swift */; };
 		9DB5EFE3F7B14677E7135D86 /* AccessibilityHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C608C5950AB9E38C3F59A539 /* AccessibilityHelper.swift */; };
+		AAAA1111222233334444BBBB /* TranslationHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB5555666677778888CCCC /* TranslationHUD.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		87A4D3BEF633F1EA196CFC42 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
 		B4E78779434E39B3244F752B /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		C608C5950AB9E38C3F59A539 /* AccessibilityHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelper.swift; sourceTree = "<group>"; };
+		BBBB5555666677778888CCCC /* TranslationHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationHUD.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -62,6 +64,7 @@
 				0854A02989745CFFB5694ACC /* PopoverView.swift */,
 				B4E78779434E39B3244F752B /* StatusBarController.swift */,
 				03108CD31DBB534D121874DC /* TranslateBarApp.swift */,
+				BBBB5555666677778888CCCC /* TranslationHUD.swift */,
 			);
 			path = TranslateBar;
 			sourceTree = "<group>";
@@ -133,6 +136,7 @@
 				7D5EB3F5817E5F257F16127B /* PopoverView.swift in Sources */,
 				2772AE1067252CF92D9C1162 /* StatusBarController.swift in Sources */,
 				0D1170CDEA47B83D165A79B3 /* TranslateBarApp.swift in Sources */,
+				AAAA1111222233334444BBBB /* TranslationHUD.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,6 +7,18 @@ final class AccessibilityHelper {
 
     private init() {}
 
+    /// Raw AXIsProcessTrusted check (for debugging)
+    var isAXTrusted: Bool {
+        AXIsProcessTrusted()
+    }
+
+    /// Check if we can create CGEvents (for debugging)
+    var canCreateCGEvent: Bool {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let testEvent = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true)
+        return testEvent != nil
+    }
+
     /// Checks if the app has Accessibility permissions
     var hasAccessibilityPermission: Bool {
         AXIsProcessTrusted()
@@ -24,6 +36,35 @@ final class AccessibilityHelper {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    /// Simulates Cmd+C keystroke to copy selected text
+    /// - Returns: True if successful, false if no permission or error
+    @discardableResult
+    func simulateCopy() -> Bool {
+        guard hasAccessibilityPermission else {
+            return false
+        }
+
+        let source = CGEventSource(stateID: .hidSystemState)
+
+        // Key code for 'C' is 8
+        let keyCodeC: CGKeyCode = 8
+
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCodeC, keyDown: true) else {
+            return false
+        }
+        keyDown.flags = .maskCommand
+
+        guard let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCodeC, keyDown: false) else {
+            return false
+        }
+        keyUp.flags = .maskCommand
+
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+
+        return true
     }
 
     /// Simulates Cmd+V keystroke to paste from clipboard

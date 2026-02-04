@@ -1,6 +1,73 @@
 import SwiftUI
 import Combine
 
+// MARK: - Language Model
+
+enum TargetLanguage: String, CaseIterable {
+    case english = "English"
+    case spanish = "Spanish"
+    case french = "French"
+    case german = "German"
+    case italian = "Italian"
+    case portuguese = "Portuguese"
+    case chinese = "Chinese"
+    case japanese = "Japanese"
+    case korean = "Korean"
+    case arabic = "Arabic"
+    case russian = "Russian"
+
+    var displayName: String { rawValue }
+    var flag: String {
+        switch self {
+        case .english: return "🇬🇧"
+        case .spanish: return "🇪🇸"
+        case .french: return "🇫🇷"
+        case .german: return "🇩🇪"
+        case .italian: return "🇮🇹"
+        case .portuguese: return "🇵🇹"
+        case .chinese: return "🇨🇳"
+        case .japanese: return "🇯🇵"
+        case .korean: return "🇰🇷"
+        case .arabic: return "🇸🇦"
+        case .russian: return "🇷🇺"
+        }
+    }
+}
+
+enum TranslationTone: String, CaseIterable {
+    case original = "original"
+    case formal = "formal"
+    case casual = "casual"
+    case concise = "concise"
+
+    var displayName: String {
+        switch self {
+        case .original: return "Original"
+        case .formal: return "Formal"
+        case .casual: return "Casual"
+        case .concise: return "Concise"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .original: return "🎯"
+        case .formal: return "👔"
+        case .casual: return "💬"
+        case .concise: return "✂️"
+        }
+    }
+
+    var promptInstruction: String {
+        switch self {
+        case .original: return "Preserve the original tone"
+        case .formal: return "Use a formal, professional tone"
+        case .casual: return "Use a casual, relaxed tone"
+        case .concise: return "Be direct and brief, remove unnecessary words"
+        }
+    }
+}
+
 /// Main view model managing app state and translation logic
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -13,6 +80,16 @@ final class AppViewModel: ObservableObject {
             UserDefaults.standard.set(autoPasteEnabled, forKey: "autoPasteEnabled")
         }
     }
+    @Published var targetLanguage: TargetLanguage {
+        didSet {
+            UserDefaults.standard.set(targetLanguage.rawValue, forKey: "targetLanguage")
+        }
+    }
+    @Published var translationTone: TranslationTone {
+        didSet {
+            UserDefaults.standard.set(translationTone.rawValue, forKey: "translationTone")
+        }
+    }
     @Published var statusMessage: String = ""
     @Published var isTranslating: Bool = false
     @Published var hasAccessibilityPermission: Bool = false
@@ -23,12 +100,30 @@ final class AppViewModel: ObservableObject {
     private let clipboard = ClipboardManager.shared
     private let openAI = OpenAIClient.shared
     private let accessibility = AccessibilityHelper.shared
+    private let hud = TranslationHUD.shared
+    private var permissionPollingTimer: Timer?
 
     // MARK: - Initialization
 
     init() {
         // Load preferences
         self.autoPasteEnabled = UserDefaults.standard.bool(forKey: "autoPasteEnabled")
+
+        // Load target language
+        if let savedLanguage = UserDefaults.standard.string(forKey: "targetLanguage"),
+           let language = TargetLanguage(rawValue: savedLanguage) {
+            self.targetLanguage = language
+        } else {
+            self.targetLanguage = .english
+        }
+
+        // Load translation tone
+        if let savedTone = UserDefaults.standard.string(forKey: "translationTone"),
+           let tone = TranslationTone(rawValue: savedTone) {
+            self.translationTone = tone
+        } else {
+            self.translationTone = .original
+        }
 
         // Check if API key exists
         self.hasAPIKey = keychain.hasAPIKey
@@ -81,16 +176,22 @@ final class AppViewModel: ObservableObject {
         }
 
         guard let text = clipboard.readText() else {
-            statusMessage = "Clipboard empty or non-text"
+            statusMessage = "Clipboard empty"
             return
         }
 
         isTranslating = true
         statusMessage = "Translating..."
+        hud.show(message: "Translating...")
 
         Task {
             do {
-                let translated = try await openAI.translate(text: text, apiKey: apiKey)
+                let translated = try await openAI.translate(
+                    text: text,
+                    apiKey: apiKey,
+                    targetLanguage: targetLanguage.rawValue,
+                    tone: translationTone.promptInstruction
+                )
 
                 // Write to clipboard
                 if clipboard.writeText(translated) {
@@ -102,6 +203,7 @@ final class AppViewModel: ObservableObject {
                         hasAccessibilityPermission = accessibility.hasAccessibilityPermission
 
                         if hasAccessibilityPermission {
+                            hud.update(message: "Pasting...")
                             // Small delay to ensure clipboard is set
                             try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
                             if accessibility.simulatePaste() {
@@ -121,6 +223,7 @@ final class AppViewModel: ObservableObject {
                 statusMessage = error.localizedDescription
             }
 
+            hud.hide()
             isTranslating = false
         }
     }
@@ -128,18 +231,43 @@ final class AppViewModel: ObservableObject {
     // MARK: - Accessibility
 
     func refreshAccessibilityStatus() {
-        hasAccessibilityPermission = accessibility.hasAccessibilityPermission
+        let newStatus = accessibility.hasAccessibilityPermission
+        hasAccessibilityPermission = newStatus
+
+        // If we now have permission, stop polling
+        if newStatus {
+            stopPermissionPolling()
+        }
+    }
+
+    /// Starts polling for permission changes every second
+    /// Call this when the popover appears and permissions are needed
+    func startPermissionPolling() {
+        // Don't start if already have permission or already polling
+        guard !hasAccessibilityPermission, permissionPollingTimer == nil else { return }
+
+        permissionPollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshAccessibilityStatus()
+            }
+        }
+    }
+
+    /// Stops the permission polling timer
+    func stopPermissionPolling() {
+        permissionPollingTimer?.invalidate()
+        permissionPollingTimer = nil
     }
 
     func requestAccessibilityPermission() {
         accessibility.requestAccessibilityPermission()
-        // Refresh after a short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.refreshAccessibilityStatus()
-        }
+        // Start polling after requesting
+        startPermissionPolling()
     }
 
     func openAccessibilitySettings() {
         accessibility.openAccessibilitySettings()
+        // Start polling after opening settings
+        startPermissionPolling()
     }
 }
