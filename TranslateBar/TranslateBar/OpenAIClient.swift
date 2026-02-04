@@ -13,17 +13,22 @@ final class OpenAIClient {
     /// - Parameters:
     ///   - text: The text to translate
     ///   - apiKey: The OpenAI API key
+    ///   - targetLanguage: The language to translate to (default: English)
+    ///   - tone: The tone instruction for the translation
     /// - Returns: The translated text
-    func translate(text: String, apiKey: String) async throws -> String {
+    func translate(text: String, apiKey: String, targetLanguage: String = "English", tone: String = "Preserve the original tone") async throws -> String {
         let prompt = """
-        Translate the following text to natural, concise, professional English.
-        Preserve meaning and tone.
-        Return only the translated text.
+        Translate to \(targetLanguage). \(tone).
 
-        Text:
-        \"\"\"
+        Preserve the exact style and formatting:
+        - Keep lowercase if original is lowercase
+        - Don't add punctuation (periods, commas) that isn't in the original
+        - Don't add quotes unless the original has them
+        - Keep all emojis
+
+        Only return the translation, nothing else.
+
         \(text)
-        \"\"\"
         """
 
         let requestBody = OpenAIRequest(
@@ -31,7 +36,7 @@ final class OpenAIClient {
             messages: [
                 Message(role: "user", content: prompt)
             ],
-            temperature: 0.3,
+            temperature: 0.1,
             max_tokens: 2048
         )
 

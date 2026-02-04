@@ -25,6 +25,11 @@ struct PopoverView: View {
 
             Divider()
 
+            // Language Section
+            languageSection
+
+            Divider()
+
             // Auto-paste Section
             autoPasteSection
 
@@ -45,6 +50,20 @@ struct PopoverView: View {
         .frame(width: 320, height: 380)
         .onAppear {
             viewModel.refreshAccessibilityStatus()
+            // Start polling if auto-paste is enabled but no permission yet
+            if viewModel.autoPasteEnabled && !viewModel.hasAccessibilityPermission {
+                viewModel.startPermissionPolling()
+            }
+        }
+        .onDisappear {
+            viewModel.stopPermissionPolling()
+        }
+        .onChange(of: viewModel.autoPasteEnabled) { newValue in
+            if newValue && !viewModel.hasAccessibilityPermission {
+                viewModel.startPermissionPolling()
+            } else if !newValue {
+                viewModel.stopPermissionPolling()
+            }
         }
     }
 
@@ -84,6 +103,37 @@ struct PopoverView: View {
         }
     }
 
+    private var languageSection: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Translate to")
+                    .font(.subheadline)
+                Spacer()
+                Picker("", selection: $viewModel.targetLanguage) {
+                    ForEach(TargetLanguage.allCases, id: \.self) { language in
+                        Text("\(language.flag) \(language.displayName)").tag(language)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 140)
+            }
+            HStack {
+                Text("Tone")
+                    .font(.subheadline)
+                Spacer()
+                Picker("", selection: $viewModel.translationTone) {
+                    ForEach(TranslationTone.allCases, id: \.self) { tone in
+                        Text("\(tone.icon) \(tone.displayName)").tag(tone)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 140)
+            }
+        }
+    }
+
     private var autoPasteSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle("Auto-paste after translation", isOn: $viewModel.autoPasteEnabled)
@@ -97,49 +147,22 @@ struct PopoverView: View {
 
     @ViewBuilder
     private var accessibilityStatus: some View {
-        if viewModel.hasAccessibilityPermission {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-                    .font(.caption)
-                Text("Accessibility permission granted")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        } else {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                        .font(.caption)
-                    Text("Accessibility permission required")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+        HStack(spacing: 4) {
+            Image(systemName: viewModel.hasAccessibilityPermission ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                .foregroundColor(viewModel.hasAccessibilityPermission ? .green : .orange)
+                .font(.caption)
+            Text(viewModel.hasAccessibilityPermission ? "Accessibility granted" : "Accessibility required")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+            if !viewModel.hasAccessibilityPermission {
+                Button("Grant") {
+                    viewModel.openAccessibilitySettings()
                 }
-
-                Text("Auto-paste needs permission to simulate keyboard events.")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    Button("Request Permission") {
-                        viewModel.requestAccessibilityPermission()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-
-                    Button("Open Settings") {
-                        viewModel.openAccessibilitySettings()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.plain)
-                    .foregroundColor(.accentColor)
-                }
+                .font(.caption)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .padding(8)
-            .background(Color.orange.opacity(0.1))
-            .cornerRadius(6)
         }
     }
 
