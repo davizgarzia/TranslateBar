@@ -79,8 +79,22 @@ final class AppViewModel: ObservableObject {
     @Published var isTranslating: Bool = false
     @Published var hasAccessibilityPermission: Bool = false
 
+    // Trial & License
+    @Published var trialStatus: TrialManager.TrialStatus = .expired
+    @Published var licenseKeyInput: String = ""
+    @Published var isActivatingLicense: Bool = false
+
+    // Onboarding
+    enum OnboardingStep {
+        case apiKey
+        case permissions
+        case complete
+    }
+    @Published var onboardingStep: OnboardingStep = .apiKey
+
     // MARK: - Private Properties
 
+    private let trialManager = TrialManager.shared
     private let keychain = KeychainHelper.shared
     private let clipboard = ClipboardManager.shared
     private let openAI = OpenAIClient.shared
@@ -91,7 +105,10 @@ final class AppViewModel: ObservableObject {
     // MARK: - Initialization
 
     init() {
-        // Load preferences
+        // Load preferences - auto-paste enabled by default
+        if UserDefaults.standard.object(forKey: "autoPasteEnabled") == nil {
+            UserDefaults.standard.set(true, forKey: "autoPasteEnabled")
+        }
         self.autoPasteEnabled = UserDefaults.standard.bool(forKey: "autoPasteEnabled")
 
         // Load target language
@@ -115,6 +132,19 @@ final class AppViewModel: ObservableObject {
 
         // Check accessibility permission
         self.hasAccessibilityPermission = accessibility.hasAccessibilityPermission
+
+        // Record usage and get trial status
+        trialManager.recordUsage()
+        self.trialStatus = trialManager.status
+
+        // Set onboarding step
+        if !hasAPIKey {
+            self.onboardingStep = .apiKey
+        } else if !UserDefaults.standard.bool(forKey: "onboardingComplete") {
+            self.onboardingStep = .permissions
+        } else {
+            self.onboardingStep = .complete
+        }
     }
 
     // MARK: - API Key Management
@@ -135,16 +165,46 @@ final class AppViewModel: ObservableObject {
         if keychain.saveAPIKey(trimmedKey) {
             hasAPIKey = true
             apiKeyInput = ""
-            statusMessage = "API key saved securely"
+            statusMessage = ""
+
+            // Go to permissions step
+            onboardingStep = .permissions
         } else {
             statusMessage = "Failed to save API key"
         }
+    }
+
+    // MARK: - Onboarding
+
+    func enableAutoPasteWithPermissions() {
+        autoPasteEnabled = true
+        accessibility.requestAccessibilityPermission()
+        startPermissionPolling()
+
+        // Complete onboarding after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.completeOnboarding()
+        }
+    }
+
+    func skipAutoPaste() {
+        autoPasteEnabled = false
+        completeOnboarding()
+    }
+
+    private func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: "onboardingComplete")
+        onboardingStep = .complete
     }
 
     func deleteAPIKey() {
         keychain.deleteAPIKey()
         hasAPIKey = false
         statusMessage = "API key removed"
+
+        // Reset onboarding
+        UserDefaults.standard.set(false, forKey: "onboardingComplete")
+        onboardingStep = .apiKey
     }
 
     // MARK: - Translation
@@ -152,6 +212,12 @@ final class AppViewModel: ObservableObject {
     func translateClipboard() {
         guard !isTranslating else {
             statusMessage = "Translation in progress..."
+            return
+        }
+
+        // Check trial/license status
+        guard trialManager.canUseApp else {
+            statusMessage = "Trial expired - please activate license"
             return
         }
 
@@ -254,5 +320,44 @@ final class AppViewModel: ObservableObject {
         accessibility.openAccessibilitySettings()
         // Start polling after opening settings
         startPermissionPolling()
+    }
+
+    // MARK: - Trial & License
+
+    func refreshTrialStatus() {
+        trialStatus = trialManager.status
+    }
+
+    func activateLicense() {
+        let trimmedKey = licenseKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedKey.isEmpty else {
+            statusMessage = "Please enter a license key"
+            return
+        }
+
+        isActivatingLicense = true
+        statusMessage = "Activating license..."
+
+        Task {
+            let success = await trialManager.activateLicense(trimmedKey)
+
+            if success {
+                trialStatus = trialManager.status
+                licenseKeyInput = ""
+                statusMessage = "License activated!"
+            } else {
+                statusMessage = "Invalid license key"
+            }
+
+            isActivatingLicense = false
+        }
+    }
+
+    func openPurchasePage() {
+        // TODO: Replace with your LemonSqueezy product URL
+        if let url = URL(string: "https://translite.app/buy") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
