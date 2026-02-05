@@ -85,12 +85,17 @@ final class StatusBarController {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            if let button = statusItem.button {
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            showPopover()
+        }
+    }
+    
+    /// Shows the popover (can be called externally)
+    func showPopover() {
+        if let button = statusItem.button {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
-                // Ensure popover window becomes key
-                popover.contentViewController?.view.window?.makeKey()
-            }
+            // Ensure popover window becomes key
+            popover.contentViewController?.view.window?.makeKey()
         }
     }
 
