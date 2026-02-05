@@ -37,6 +37,9 @@ struct PopoverView: View {
             header
 
             switch viewModel.onboardingStep {
+            case .welcome:
+                onboardingWelcomeCard
+
             case .apiKey:
                 onboardingApiKeyCard
 
@@ -379,79 +382,168 @@ struct PopoverView: View {
         .cornerRadius(cardCornerRadius)
     }
 
-    // MARK: - Onboarding: API Key
+    // MARK: - Onboarding: Welcome
 
-    private var onboardingApiKeyCard: some View {
+    private var onboardingWelcomeCard: some View {
         VStack(spacing: 0) {
-            // Welcome header
-            VStack(spacing: 4) {
-                Text("Welcome to TransLite")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Add your OpenAI API key to get started")
+            // Welcome header with icon
+            VStack(spacing: 12) {
+                Image(systemName: "globe.americas.fill")
+                    .font(.system(size: 36))
+                    .foregroundColor(.accentColor)
+
+                Text("Instant translation anywhere")
+                    .font(.system(size: 14, weight: .semibold))
+
+                Text("Select text anywhere on your Mac and translate it instantly. No tabs, no copy-paste loops — just a shortcut.")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 12)
+
+            Divider()
+
+            // Features
+            VStack(spacing: 10) {
+                featureRow(icon: "bolt.fill", text: "Auto-paste with one shortcut")
+                featureRow(icon: "desktopcomputer", text: "Works anywhere on your Mac")
+                featureRow(icon: "paintbrush.fill", text: "Custom tone & any language")
+            }
             .padding(.vertical, 12)
+            .padding(.horizontal, cardPadding + 4)
 
             Divider()
 
-            // API key input
-            VStack(spacing: 8) {
-                SecureField("sk-...", text: $viewModel.apiKeyInput)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(6)
-                    .font(.system(size: 12, design: .monospaced))
-
-                Button {
-                    viewModel.saveAPIKey()
-                } label: {
-                    Text("Save API Key")
-                        .font(.system(size: 10, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 24)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(viewModel.apiKeyInput.isEmpty)
-            }
-            .padding(cardPadding + 4)
-
-            Divider()
-
-            // Steps always visible
-            VStack(alignment: .leading, spacing: 8) {
-                Text("How to get an API key")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.secondary)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    apiKeyStep(number: 1, text: "Sign in at platform.openai.com")
-                    apiKeyStep(number: 2, text: "Go to API Keys section")
-                    apiKeyStep(number: 3, text: "Create new secret key")
-                    apiKeyStep(number: 4, text: "Copy and paste above")
-                }
-
-                Button {
-                    if let url = URL(string: "https://platform.openai.com/api-keys") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.right.square")
-                        Text("Open OpenAI")
-                    }
-                    .font(.system(size: 10, weight: .medium))
+            // Continue button
+            Button {
+                viewModel.continueFromWelcome()
+            } label: {
+                Text("Get Started")
+                    .font(.system(size: 11, weight: .medium))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 24)
-                }
-                .buttonStyle(.bordered)
+                    .frame(height: 28)
             }
+            .buttonStyle(.borderedProminent)
             .padding(cardPadding + 4)
         }
         .background(Color(NSColor.controlBackgroundColor).opacity(0.7))
         .cornerRadius(cardCornerRadius)
+    }
+
+    private func featureRow(icon: String, text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundColor(.accentColor)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(.primary)
+            Spacer()
+        }
+    }
+
+    // MARK: - Onboarding: API Key
+
+    private var onboardingApiKeyCard: some View {
+        VStack(spacing: 8) {
+            // Main card
+            VStack(spacing: 0) {
+                // Header with OpenAI logo
+                VStack(spacing: 8) {
+                    Image("OpenAIIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 32, height: 32)
+                    
+                    Text("Connect your OpenAI Key")
+                        .font(.system(size: 13, weight: .semibold))
+                    
+                    Text("Your API key, your data. We never store or read your content.")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+
+                Divider()
+
+                // API key input
+                VStack(spacing: 8) {
+                    SecureField("sk-...", text: $viewModel.apiKeyInput)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(6)
+                        .font(.system(size: 12, design: .monospaced))
+
+                    Button {
+                        viewModel.saveAPIKey()
+                    } label: {
+                        Text("Save API Key")
+                            .font(.system(size: 10, weight: .medium))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 24)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(viewModel.apiKeyInput.isEmpty)
+                }
+                .padding(cardPadding + 4)
+
+                Divider()
+
+                // Steps to get API key
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("How to get an API key")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.secondary)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        apiKeyStep(number: 1, text: "Sign in at platform.openai.com")
+                        apiKeyStep(number: 2, text: "Go to API Keys section")
+                        apiKeyStep(number: 3, text: "Create new secret key")
+                        apiKeyStep(number: 4, text: "Copy and paste above")
+                    }
+
+                    Button {
+                        if let url = URL(string: "https://platform.openai.com/api-keys") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.right.square")
+                            Text("Open OpenAI")
+                        }
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(cardPadding + 4)
+            }
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.7))
+            .cornerRadius(cardCornerRadius)
+            
+            // Pricing disclaimer - separate from main card
+            Text("OpenAI charges only for usage. We use gpt-4o-mini (~1,500 words/translation). With normal use, $5 = 15,000+ translations.")
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
+                .background(Color(NSColor.textBackgroundColor).opacity(0.3))
+                .cornerRadius(cardCornerRadius)
+        }
     }
 
     // MARK: - Onboarding: Permissions
@@ -740,10 +832,19 @@ private struct DebugMenu: View {
 
             Section("Onboarding") {
                 Button("Reset Everything") {
-                    UserDefaults.standard.set(false, forKey: "onboardingComplete")
-                    TrialManager.shared.debugResetTrial()
-                    viewModel.onboardingStep = .apiKey
+                    // Delete API key first (it sets some flags)
                     viewModel.deleteAPIKey()
+                    
+                    // Now reset all onboarding flags
+                    UserDefaults.standard.set(false, forKey: "hasSeenWelcome")
+                    UserDefaults.standard.set(false, forKey: "onboardingComplete")
+                    
+                    // Reset trial
+                    TrialManager.shared.debugResetTrial()
+                    viewModel.refreshTrialStatus()
+                    
+                    // Force back to welcome screen
+                    viewModel.onboardingStep = .welcome
                 }
             }
         } label: {

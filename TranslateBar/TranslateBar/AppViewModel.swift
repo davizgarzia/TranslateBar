@@ -86,11 +86,12 @@ final class AppViewModel: ObservableObject {
 
     // Onboarding
     enum OnboardingStep {
+        case welcome
         case apiKey
         case permissions
         case complete
     }
-    @Published var onboardingStep: OnboardingStep = .apiKey
+    @Published var onboardingStep: OnboardingStep = .welcome
 
     // MARK: - Private Properties
 
@@ -138,7 +139,11 @@ final class AppViewModel: ObservableObject {
         self.trialStatus = trialManager.status
 
         // Set onboarding step
-        if !hasAPIKey {
+        let hasSeenWelcome = UserDefaults.standard.bool(forKey: "hasSeenWelcome")
+        
+        if !hasSeenWelcome {
+            self.onboardingStep = .welcome
+        } else if !hasAPIKey {
             self.onboardingStep = .apiKey
         } else if !UserDefaults.standard.bool(forKey: "onboardingComplete") {
             self.onboardingStep = .permissions
@@ -175,6 +180,11 @@ final class AppViewModel: ObservableObject {
     }
 
     // MARK: - Onboarding
+
+    func continueFromWelcome() {
+        UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
+        onboardingStep = .apiKey
+    }
 
     func enableAutoPasteWithPermissions() {
         autoPasteEnabled = true
