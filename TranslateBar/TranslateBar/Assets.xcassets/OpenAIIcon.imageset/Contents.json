@@ -1,14 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "openai_16.png",
-      "idiom" : "mac",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "openai_32.png",
-      "idiom" : "mac",
-      "scale" : "2x"
+      "filename" : "openai.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {
@@ -16,6 +10,7 @@
     "version" : 1
   },
   "properties" : {
+    "preserves-vector-representation" : true,
     "template-rendering-intent" : "template"
   }
 }

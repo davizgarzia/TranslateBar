@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 /// Main SwiftUI view for the menubar popover
 struct PopoverView: View {
@@ -667,7 +668,7 @@ struct PopoverView: View {
             DebugMenu(viewModel: viewModel)
             #endif
 
-            QuitButton()
+            MoreOptionsMenu()
         }
         .padding(.top, 8)
     }
@@ -711,21 +712,9 @@ private struct FeedbackMenu: View {
     @State private var isHovered = false
 
     var body: some View {
-        Menu {
-            Button {
-                if let url = URL(string: "https://mail.google.com/mail/?view=cm&to=dvzgrz@gmail.com&su=TransLite%20Feedback") {
-                    NSWorkspace.shared.open(url)
-                }
-            } label: {
-                Label("Send an email", systemImage: "envelope")
-            }
-
-            Button {
-                if let url = URL(string: "https://x.com/messages/compose?recipient_id=1164799217748942849") {
-                    NSWorkspace.shared.open(url)
-                }
-            } label: {
-                Label("Message on X", systemImage: "at")
+        Button {
+            if let url = URL(string: "https://tally.so/r/D4zL25") {
+                NSWorkspace.shared.open(url)
             }
         } label: {
             HStack(spacing: 4) {
@@ -733,13 +722,10 @@ private struct FeedbackMenu: View {
                     .font(.system(size: 11, weight: .medium))
                 Text("Feedback")
                     .font(.system(size: 10))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 7, weight: .semibold))
             }
             .foregroundColor(isHovered ? .primary : .secondary)
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
         .onHover { hovering in
             isHovered = hovering
         }
@@ -857,20 +843,64 @@ private struct DebugMenu: View {
 }
 #endif
 
-private struct QuitButton: View {
+private struct MoreOptionsMenu: View {
     @State private var isHovered = false
-
+    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    
     var body: some View {
-        Button {
-            NSApplication.shared.terminate(nil)
+        Menu {
+            Button {
+                launchAtLogin.toggle()
+                toggleLaunchAtLogin(launchAtLogin)
+            } label: {
+                HStack {
+                    Text("Launch at Startup")
+                    if launchAtLogin {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+            
+            Divider()
+            
+            Button("Follow on X") {
+                if let url = URL(string: "https://x.com/davizgarzia") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            
+            Button("Visit website") {
+                if let url = URL(string: "https://translite.app") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            
+            Divider()
+            
+            Button("Quit TransLite") {
+                NSApplication.shared.terminate(nil)
+            }
         } label: {
-            Image(systemName: "power")
+            Image(systemName: "ellipsis.circle")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(isHovered ? .primary : .secondary)
         }
-        .buttonStyle(.plain)
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .onHover { hovering in
             isHovered = hovering
+        }
+    }
+    
+    private func toggleLaunchAtLogin(_ enabled: Bool) {
+        // SMLoginItemSetEnabled implementation
+        let identifier = "com.translite.TranslateBarLaunchHelper" as CFString
+        if #available(macOS 13.0, *) {
+            if enabled {
+                try? SMAppService.mainApp.register()
+            } else {
+                try? SMAppService.mainApp.unregister()
+            }
         }
     }
 }
