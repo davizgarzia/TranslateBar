@@ -57,13 +57,28 @@ echo "4/8. Firmando app con Developer ID..."
 codesign --deep --force --options runtime --sign "$DEVELOPER_ID" "$RELEASE_DIR/TransLite-$VERSION.app"
 codesign --verify --verbose "$RELEASE_DIR/TransLite-$VERSION.app"
 
-# 5. Crear DMG
-echo "5/8. Creando DMG..."
+# 5. Crear DMG con diseño profesional
+echo "5/8. Creando DMG con diseño profesional..."
 DMG_PATH="$RELEASE_DIR/TransLite-$VERSION.dmg"
 rm -f "$DMG_PATH"
 
-# Crear DMG temporal
-hdiutil create -volname "TransLite $VERSION" -srcfolder "$RELEASE_DIR/TransLite-$VERSION.app" -ov -format UDZO "$DMG_PATH"
+# Renombrar app temporalmente para que se llame TransLite.app en el DMG
+mv "$RELEASE_DIR/TransLite-$VERSION.app" "$RELEASE_DIR/TransLite.app"
+
+# Crear DMG con create-dmg (incluye alias a Applications automáticamente)
+create-dmg \
+    --volname "TransLite $VERSION" \
+    --window-pos 200 120 \
+    --window-size 600 400 \
+    --icon-size 100 \
+    --icon "TransLite.app" 150 185 \
+    --app-drop-link 450 185 \
+    --hide-extension "TransLite.app" \
+    "$DMG_PATH" \
+    "$RELEASE_DIR/TransLite.app"
+
+# Restaurar nombre original
+mv "$RELEASE_DIR/TransLite.app" "$RELEASE_DIR/TransLite-$VERSION.app"
 
 # 6. Firmar DMG
 echo "6/8. Firmando DMG..."
