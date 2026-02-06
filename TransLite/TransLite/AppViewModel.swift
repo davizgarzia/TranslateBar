@@ -128,9 +128,6 @@ final class AppViewModel: ObservableObject {
             self.translationTone = .original
         }
 
-        // Check if API key exists
-        self.hasAPIKey = keychain.hasAPIKey
-
         // Check accessibility permission
         self.hasAccessibilityPermission = accessibility.hasAccessibilityPermission
 
@@ -138,17 +135,26 @@ final class AppViewModel: ObservableObject {
         trialManager.recordUsage()
         self.trialStatus = trialManager.status
 
-        // Set onboarding step
+        // Set onboarding step - determine WITHOUT accessing Keychain yet
+        // to avoid triggering the Keychain permission dialog before UI is ready
         let hasSeenWelcome = UserDefaults.standard.bool(forKey: "hasSeenWelcome")
-        
+        let onboardingComplete = UserDefaults.standard.bool(forKey: "onboardingComplete")
+
         if !hasSeenWelcome {
             self.onboardingStep = .welcome
-        } else if !hasAPIKey {
-            self.onboardingStep = .apiKey
-        } else if !UserDefaults.standard.bool(forKey: "onboardingComplete") {
-            self.onboardingStep = .permissions
+            self.hasAPIKey = false // Don't check keychain yet
+        } else if onboardingComplete {
+            // Only access keychain if onboarding is complete
+            self.hasAPIKey = keychain.hasAPIKey
+            self.onboardingStep = hasAPIKey ? .complete : .apiKey
         } else {
-            self.onboardingStep = .complete
+            // Onboarding in progress - check keychain to determine step
+            self.hasAPIKey = keychain.hasAPIKey
+            if !hasAPIKey {
+                self.onboardingStep = .apiKey
+            } else {
+                self.onboardingStep = .permissions
+            }
         }
     }
 

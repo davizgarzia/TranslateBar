@@ -5,7 +5,7 @@ import Security
 final class KeychainHelper {
     static let shared = KeychainHelper()
 
-    private let service = "com.translatebar.apikey"
+    private let service = "com.translite.apikey"
     private let account = "openai-api-key"
 
     private init() {}

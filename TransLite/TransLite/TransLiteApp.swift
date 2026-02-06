@@ -26,8 +26,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let viewModel = viewModel {
             statusBarController = StatusBarController(viewModel: viewModel)
             
-            // Show popover on first launch (when user is on welcome screen)
-            if viewModel.onboardingStep == .welcome {
+            // Show popover on first launch (when onboarding is not complete)
+            if viewModel.onboardingStep != .complete {
                 // Delay slightly to ensure UI is ready
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.statusBarController?.showPopover()
