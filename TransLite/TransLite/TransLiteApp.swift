@@ -15,6 +15,8 @@ struct TransLiteApp: App {
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static var shared: AppDelegate!
+
     var statusBarController: StatusBarController?
     var hotkeyManager: HotkeyManager?
     var viewModel: AppViewModel?
@@ -23,6 +25,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var updaterController: SPUStandardUpdaterController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppDelegate.shared = self
+
         // Initialize Sparkle updater
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 

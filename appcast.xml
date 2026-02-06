@@ -16,13 +16,13 @@
             <description><![CDATA[
                 <h2>TransLite 1.0.1</h2>
                 <ul>
-                    <li>Mejoras de rendimiento</li>
+                    <li>Añadida opción "Check for Updates" en el menú</li>
                 </ul>
             ]]></description>
             <enclosure
                 url="https://github.com/davizgarzia/TransLite/releases/download/v1.0.1/TransLite-1.0.1.dmg"
-                sparkle:edSignature="ILJ6AZWma5ihy2xZG74VV59Hgnl0pDpK0oerqdAt6R6ekXJabv60zoRO2W05j5mSFqa1SDOHy9B3gEaenxNuBQ=="
-                length="1447621"
+                sparkle:edSignature="ctz80Q3DxCtS5urVD75UqWzm8ymg1r7bAqvmcpFKYmkhFVe00ER2nKmq6emcrNf0vDJ58rFNBFAfemZtu3Y1BQ=="
+                length="1447805"
                 type="application/octet-stream" />
         </item>
 

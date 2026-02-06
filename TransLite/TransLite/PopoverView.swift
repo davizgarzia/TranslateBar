@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import Sparkle
 
 /// Main SwiftUI view for the menubar popover
 struct PopoverView: View {
@@ -874,9 +875,15 @@ private struct MoreOptionsMenu: View {
                     NSWorkspace.shared.open(url)
                 }
             }
-            
+
             Divider()
-            
+
+            Button("Check for Updates...") {
+                AppDelegate.shared?.updaterController?.checkForUpdates(nil)
+            }
+
+            Divider()
+
             Button("Quit TransLite") {
                 NSApplication.shared.terminate(nil)
             }
