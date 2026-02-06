@@ -24,7 +24,7 @@ final class HotkeyManager {
         let keyCode: UInt32 = 17
         let modifiers: UInt32 = UInt32(cmdKey | shiftKey)
 
-        var hotKeyID = hotkeyID
+        let hotKeyID = hotkeyID
 
         // Register the hotkey
         let status = RegisterEventHotKey(

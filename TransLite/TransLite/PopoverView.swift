@@ -800,7 +800,7 @@ private struct DebugMenu: View {
             Section("License") {
                 Button("Add Fake License") {
                     Task {
-                        await TrialManager.shared.activateLicense("DEBUG-LICENSE-KEY")
+                        _ = await TrialManager.shared.activateLicense("DEBUG-LICENSE-KEY")
                         viewModel.refreshTrialStatus()
                     }
                 }
@@ -893,8 +893,6 @@ private struct MoreOptionsMenu: View {
     }
     
     private func toggleLaunchAtLogin(_ enabled: Bool) {
-        // SMLoginItemSetEnabled implementation
-        let identifier = "com.translite.TransLiteLaunchHelper" as CFString
         if #available(macOS 13.0, *) {
             if enabled {
                 try? SMAppService.mainApp.register()
