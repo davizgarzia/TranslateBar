@@ -660,17 +660,19 @@ struct PopoverView: View {
     // MARK: - Footer Section
 
     private var footerSection: some View {
-        HStack(spacing: 12) {
+        HStack {
             FeedbackMenu()
 
             Spacer()
 
             #if DEBUG
             DebugMenu(viewModel: viewModel)
+                .padding(.trailing, 8)
             #endif
 
             MoreOptionsMenu()
         }
+        .frame(maxWidth: .infinity)
         .padding(.top, 8)
     }
 
