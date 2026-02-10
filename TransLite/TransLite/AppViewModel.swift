@@ -383,7 +383,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func openPurchasePage() {
-        if let url = URL(string: "https://translite.lemonsqueezy.com/checkout/buy/e4acbf88-40ff-47a9-a07c-e82dda0a4015") {
+        if let url = URL(string: "https://translite.lemonsqueezy.com/checkout/buy/02a955f2-5f2b-4bb0-a70d-21b3acb3ef2f") {
             NSWorkspace.shared.open(url)
         }
     }
