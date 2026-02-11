@@ -10,6 +10,8 @@ struct PopoverView: View {
     @State private var addingKeyFor: APIProvider? = nil
     @State private var showingApiKeySteps = false
     @State private var showingApiKeysSection = false
+    @State private var showingShortcutConfig = false
+    @State private var hotkeyLetter: String = "T"
 
     private let cardPadding: CGFloat = 8
     private let cardCornerRadius: CGFloat = 12
@@ -55,6 +57,8 @@ struct PopoverView: View {
             case .complete:
                 if let provider = addingKeyFor {
                     addApiKeyCard(for: provider)
+                } else if showingShortcutConfig {
+                    shortcutConfigCard
                 } else {
                     if !isLicensed {
                         trialSection
@@ -62,6 +66,7 @@ struct PopoverView: View {
 
                     VStack(spacing: contentSpacing) {
                         translationCard
+                        settingsCard
                         keysCard
                     }
                     .opacity(trialExpired ? 0.5 : 1.0)
@@ -81,6 +86,7 @@ struct PopoverView: View {
         .onAppear {
             viewModel.refreshAccessibilityStatus()
             viewModel.refreshTrialStatus()
+            hotkeyLetter = String(HotkeyManager.character(for: viewModel.hotkeyKeyCode) ?? "T")
             if viewModel.autoPasteEnabled && !viewModel.hasAccessibilityPermission {
                 viewModel.startPermissionPolling()
             }
@@ -111,28 +117,33 @@ struct PopoverView: View {
 
             Spacer()
 
-            HStack(spacing: 3) {
-                Text("⌘⇧T")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(3)
-
-                if !viewModel.autoPasteEnabled {
-                    Text("+")
-                        .font(.system(size: 9))
-                        .foregroundColor(.secondary.opacity(0.5))
-                    Text("⌘V")
+            Button {
+                showingShortcutConfig = true
+            } label: {
+                HStack(spacing: 3) {
+                    Text(viewModel.hotkeyDisplayString)
                         .font(.system(size: 9, weight: .medium))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
                         .background(Color(NSColor.controlBackgroundColor))
                         .cornerRadius(3)
+
+                    if !viewModel.autoPasteEnabled {
+                        Text("+")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text("⌘V")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(3)
+                    }
                 }
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -266,6 +277,36 @@ struct PopoverView: View {
                 toneSelector
             }
             .padding(cardPadding)
+        }
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.7))
+        .cornerRadius(cardCornerRadius)
+    }
+
+    // MARK: - Settings Card
+
+    private var settingsCard: some View {
+        VStack(spacing: 0) {
+            // Shortcut row
+            Button {
+                showingShortcutConfig = true
+            } label: {
+                HStack {
+                    Label("Shortcut", systemImage: "command")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(viewModel.hotkeyDisplayString)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.secondary.opacity(0.5))
+                }
+                .padding(.horizontal, cardPadding)
+                .frame(height: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
             Divider().padding(.leading, cardPadding)
 
@@ -678,6 +719,101 @@ struct PopoverView: View {
         .cornerRadius(cardCornerRadius)
     }
 
+    // MARK: - Shortcut Configuration
+
+    private var shortcutConfigCard: some View {
+        VStack(spacing: 0) {
+            // Header
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 6) {
+                    Image(systemName: "command")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(.primary)
+
+                    Text("Configure Shortcut")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+
+                Button {
+                    showingShortcutConfig = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .frame(width: 20, height: 20)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+            }
+
+            Divider()
+
+            // Content
+            VStack(spacing: 16) {
+                // Current shortcut display
+                VStack(spacing: 8) {
+                    Text("Current Shortcut")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+
+                    Text(viewModel.hotkeyDisplayString)
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(8)
+                }
+
+                // Key selector
+                VStack(spacing: 8) {
+                    Text("Select a key (⌘⇧ is fixed)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+
+                    TextField("", text: $hotkeyLetter)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 18, weight: .medium, design: .monospaced))
+                        .frame(width: 40, height: 40)
+                        .multilineTextAlignment(.center)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(8)
+                        .onChange(of: hotkeyLetter) { newValue in
+                            let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+                            if let char = filtered.last {
+                                hotkeyLetter = String(char)
+                                viewModel.updateHotkeyKey(char)
+                            } else if newValue.isEmpty {
+                                hotkeyLetter = String(HotkeyManager.character(for: viewModel.hotkeyKeyCode) ?? "T")
+                            }
+                        }
+                }
+
+                // Done button
+                Button {
+                    showingShortcutConfig = false
+                } label: {
+                    Text("Done")
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 24)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(cardPadding + 4)
+        }
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.7))
+        .cornerRadius(cardCornerRadius)
+        .onAppear {
+            hotkeyLetter = String(HotkeyManager.character(for: viewModel.hotkeyKeyCode) ?? "T")
+        }
+    }
+
     // MARK: - Onboarding: Welcome
 
     private var onboardingWelcomeCard: some View {
@@ -973,7 +1109,7 @@ struct PopoverView: View {
                         .foregroundColor(.secondary.opacity(0.5))
 
                     VStack(spacing: 4) {
-                        Text("⌘⇧T")
+                        Text(viewModel.hotkeyDisplayString)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.primary)
                         Text("Shortcut")

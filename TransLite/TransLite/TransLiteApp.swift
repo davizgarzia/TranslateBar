@@ -51,8 +51,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.viewModel?.translateClipboard()
         }
 
-        // Register the global hotkey (Cmd+Shift+T)
-        hotkeyManager?.registerHotkey()
+        // Register the global hotkey with saved key code
+        let savedKeyCode = UserDefaults.standard.integer(forKey: "hotkeyKeyCode")
+        let keyCode = savedKeyCode > 0 ? UInt32(savedKeyCode) : HotkeyManager.defaultKeyCode
+        hotkeyManager?.registerHotkey(keyCode: keyCode)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

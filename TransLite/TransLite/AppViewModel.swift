@@ -101,6 +101,12 @@ final class AppViewModel: ObservableObject {
             UserDefaults.standard.set(translationTone.rawValue, forKey: "translationTone")
         }
     }
+    @Published var hotkeyKeyCode: UInt32 {
+        didSet {
+            UserDefaults.standard.set(Int(hotkeyKeyCode), forKey: "hotkeyKeyCode")
+            AppDelegate.shared?.hotkeyManager?.updateHotkey(keyCode: hotkeyKeyCode)
+        }
+    }
     @Published var statusMessage: String = ""
     @Published var isTranslating: Bool = false
     @Published var hasAccessibilityPermission: Bool = false
@@ -162,6 +168,10 @@ final class AppViewModel: ObservableObject {
         } else {
             self.apiProvider = .openai
         }
+
+        // Load hotkey key code
+        let savedKeyCode = UserDefaults.standard.integer(forKey: "hotkeyKeyCode")
+        self.hotkeyKeyCode = savedKeyCode > 0 ? UInt32(savedKeyCode) : HotkeyManager.defaultKeyCode
 
         // Check accessibility permission
         self.hasAccessibilityPermission = accessibility.hasAccessibilityPermission
@@ -463,6 +473,18 @@ final class AppViewModel: ObservableObject {
         accessibility.openAccessibilitySettings()
         // Start polling after opening settings
         startPermissionPolling()
+    }
+
+    // MARK: - Hotkey
+
+    var hotkeyDisplayString: String {
+        let char = HotkeyManager.character(for: hotkeyKeyCode) ?? "T"
+        return "⌘⇧\(char)"
+    }
+
+    func updateHotkeyKey(_ character: Character) {
+        guard let keyCode = HotkeyManager.keyCode(for: character) else { return }
+        hotkeyKeyCode = keyCode
     }
 
     // MARK: - Trial & License
