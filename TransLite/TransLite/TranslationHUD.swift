@@ -44,11 +44,14 @@ final class TranslationHUD {
         // Create the SwiftUI content
         let contentView = HUDContentView(message: message)
         hostingView = NSHostingView(rootView: contentView)
-        hostingView?.frame = NSRect(x: 0, y: 0, width: 180, height: 80)
+
+        // Let the view size itself to fit content
+        let fittingSize = hostingView?.fittingSize ?? NSSize(width: 200, height: 80)
+        hostingView?.frame = NSRect(origin: .zero, size: fittingSize)
 
         // Create the window
         let hudWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 180, height: 80),
+            contentRect: NSRect(origin: .zero, size: fittingSize),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -60,13 +63,13 @@ final class TranslationHUD {
         hudWindow.level = .floating
         hudWindow.collectionBehavior = [.canJoinAllSpaces, .stationary]
         hudWindow.isMovableByWindowBackground = false
-        hudWindow.hasShadow = true
+        hudWindow.hasShadow = false
 
         // Center on screen
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
-            let x = screenFrame.midX - 90
-            let y = screenFrame.midY - 40
+            let x = screenFrame.midX - fittingSize.width / 2
+            let y = screenFrame.midY - fittingSize.height / 2
             hudWindow.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
@@ -82,27 +85,30 @@ final class TranslationHUD {
 /// SwiftUI view for HUD content
 struct HUDContentView: View {
     let message: String
+    @State private var isPulsing = false
 
     var body: some View {
         HStack(spacing: 12) {
-            ProgressView()
-                .scaleEffect(0.8)
-                .colorInvert()
-                .brightness(1)
+            Image("TransLiteIcon")
+                .resizable()
+                .renderingMode(.template)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 16, height: 13)
+                .foregroundColor(.white.opacity(0.7))
+                .opacity(isPulsing ? 0.3 : 1.0)
+                .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isPulsing)
+                .onAppear {
+                    isPulsing = true
+                }
 
             Text(message)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black.opacity(0.75))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .environment(\.colorScheme, .dark)
     }
 }

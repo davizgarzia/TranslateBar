@@ -93,9 +93,10 @@ struct PopoverView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            Image(systemName: "globe")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.accentColor)
+            Image("TransLiteIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 18, height: 15)
 
             Text("TransLite")
                 .font(.system(size: 13, weight: .semibold))
@@ -380,9 +381,10 @@ struct PopoverView: View {
         VStack(spacing: 0) {
             // Welcome header with icon
             VStack(spacing: 12) {
-                Image(systemName: "globe")
-                    .font(.system(size: 36))
-                    .foregroundColor(.accentColor)
+                Image("HappyTransLite")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 48, height: 48)
 
                 Text("Instant translation anywhere")
                     .font(.system(size: 14, weight: .semibold))

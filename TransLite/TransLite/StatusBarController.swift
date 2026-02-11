@@ -9,7 +9,7 @@ final class StatusBarController {
     private var popover: NSPopover
     private var eventMonitor: Any?
     private var contextMenu: NSMenu
-    private var spinner: NSProgressIndicator?
+    private var pulseAnimation: CABasicAnimation?
     private var cancellables = Set<AnyCancellable>()
 
     init(viewModel: AppViewModel) {
@@ -28,7 +28,11 @@ final class StatusBarController {
 
         // Configure status item button
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "TransLite")
+            if let image = NSImage(named: "TransLiteIcon") {
+                image.size = NSSize(width: 20, height: 16)
+                image.isTemplate = true
+                button.image = image
+            }
             button.action = #selector(handleClick)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -46,7 +50,7 @@ final class StatusBarController {
             }
         }
 
-        // Observe translation state for spinner
+        // Observe translation state for pulse animation
         viewModel.$isTranslating
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isTranslating in
@@ -101,41 +105,32 @@ final class StatusBarController {
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: - Spinner Animation
+    // MARK: - Pulse Animation
 
     private func startSpinner() {
         guard let button = statusItem.button else { return }
-        
-        // Hide the icon
-        button.image = nil
-        
-        // Create and configure spinner
-        let spinner = NSProgressIndicator()
-        spinner.style = .spinning
-        spinner.controlSize = .small
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Add spinner to button
-        button.addSubview(spinner)
-        
-        // Center the spinner
-        NSLayoutConstraint.activate([
-            spinner.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-            spinner.centerYAnchor.constraint(equalTo: button.centerYAnchor)
-        ])
-        
-        spinner.startAnimation(nil)
-        self.spinner = spinner
+
+        // Ensure layer-backed view
+        button.wantsLayer = true
+
+        // Create pulse animation
+        let pulse = CABasicAnimation(keyPath: "opacity")
+        pulse.fromValue = 1.0
+        pulse.toValue = 0.3
+        pulse.duration = 0.6
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+        button.layer?.add(pulse, forKey: "pulseAnimation")
+        pulseAnimation = pulse
     }
 
     private func stopSpinner() {
-        spinner?.stopAnimation(nil)
-        spinner?.removeFromSuperview()
-        spinner = nil
-        
-        // Restore the icon
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "TransLite")
-        }
+        guard let button = statusItem.button else { return }
+
+        // Remove animation
+        button.layer?.removeAnimation(forKey: "pulseAnimation")
+        pulseAnimation = nil
     }
 }
