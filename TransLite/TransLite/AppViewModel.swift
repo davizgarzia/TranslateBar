@@ -322,7 +322,8 @@ final class AppViewModel: ObservableObject {
             return
         }
 
-        // Check trial/license status
+        // Check trial/license status and sync UI
+        refreshTrialStatus()
         guard trialManager.canUseApp else {
             statusMessage = "Trial expired - please activate license"
             return
