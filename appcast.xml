@@ -6,7 +6,31 @@
         <description>Updates for TransLite</description>
         <language>en</language>
 
-        <!-- Current version: 1.0.5 -->
+        <!-- Current version: 1.0.6 -->
+        <item>
+            <title>Version 1.0.6</title>
+            <pubDate>Wed, 11 Feb 2026 07:46:40 +0100</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>TransLite 1.0.6</h2>
+                <h3>What's New</h3>
+                <ul>
+                    <li>🎨 New custom TransLite icon in toolbar and popover</li>
+                    <li>✨ Improved HUD design with glass effect</li>
+                    <li>💫 Smooth pulse animation during translation</li>
+                    <li>🖼️ New welcome screen icon</li>
+                </ul>
+            ]]></description>
+            <enclosure
+                url="https://github.com/davizgarzia/TransLite/releases/download/v1.0.6/TransLite-1.0.6.dmg"
+                sparkle:edSignature="EwIhdm1bkxUzu47GiF8KE4ta5/UlHaPLFA4XsBcqLBojBto2RbHiayOt9mskM8hWsBWsxE2MhhBGtO3zyJgmAg=="
+                length="1584647"
+                type="application/octet-stream" />
+        </item>
+
+        <!-- Previous version: 1.0.5 -->
         <item>
             <title>Version 1.0.5</title>
             <pubDate>Sun, 09 Feb 2026 10:40:00 +0100</pubDate>
