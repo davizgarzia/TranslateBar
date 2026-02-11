@@ -794,6 +794,41 @@ struct PopoverView: View {
                         }
                 }
 
+                // Actions list
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Translate")
+                            .font(.system(size: 10))
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(viewModel.hotkeyDisplayString)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(3)
+                    }
+                    HStack {
+                        Text("Improve text")
+                            .font(.system(size: 10))
+                            .foregroundColor(.primary)
+                        Spacer()
+                        let key = String(HotkeyManager.character(for: viewModel.hotkeyKeyCode) ?? "T")
+                        Text("⌘⇧+\(key)+\(key)")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(3)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                .cornerRadius(6)
+
                 // Done button
                 Button {
                     showingShortcutConfig = false

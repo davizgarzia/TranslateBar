@@ -46,10 +46,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Initialize the hotkey manager
-        hotkeyManager = HotkeyManager { [weak self] in
-            self?.viewModel?.translateClipboard()
-        }
+        // Initialize the hotkey manager with double-tap support
+        hotkeyManager = HotkeyManager(
+            onSingleTap: { [weak self] in
+                self?.viewModel?.translateClipboard()
+            },
+            onDoubleTap: { [weak self] in
+                self?.viewModel?.improveText()
+            }
+        )
 
         // Register the global hotkey with saved key code
         let savedKeyCode = UserDefaults.standard.integer(forKey: "hotkeyKeyCode")

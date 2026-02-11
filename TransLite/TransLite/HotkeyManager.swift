@@ -5,8 +5,14 @@ import AppKit
 final class HotkeyManager {
     private var hotkeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
-    private let callback: () -> Void
+    private let onSingleTap: () -> Void
+    private let onDoubleTap: () -> Void
     private var currentKeyCode: UInt32 = 17 // Default: T
+
+    // Double-tap detection
+    private var lastTapTime: Date?
+    private var pendingTimer: Timer?
+    private let doubleTapInterval: TimeInterval = 0.3 // 300ms
 
     // Unique identifier for our hotkey
     private let hotkeyID = EventHotKeyID(signature: OSType(0x5442_4152), id: 1) // "TBAR"
@@ -14,8 +20,9 @@ final class HotkeyManager {
     // Default key code for 'T'
     static let defaultKeyCode: UInt32 = 17
 
-    init(callback: @escaping () -> Void) {
-        self.callback = callback
+    init(onSingleTap: @escaping () -> Void, onDoubleTap: @escaping () -> Void) {
+        self.onSingleTap = onSingleTap
+        self.onDoubleTap = onDoubleTap
     }
 
     deinit {
@@ -65,6 +72,30 @@ final class HotkeyManager {
     func updateHotkey(keyCode: UInt32) {
         unregisterHotkey()
         registerHotkey(keyCode: keyCode)
+    }
+
+    // MARK: - Double-Tap Detection
+
+    private func handleHotkeyPressed() {
+        let now = Date()
+
+        // Cancel any pending single-tap timer
+        pendingTimer?.invalidate()
+        pendingTimer = nil
+
+        // Check if this is a double-tap
+        if let lastTap = lastTapTime, now.timeIntervalSince(lastTap) < doubleTapInterval {
+            // Double-tap detected
+            lastTapTime = nil
+            onDoubleTap()
+        } else {
+            // Possible single-tap - wait to see if another tap comes
+            lastTapTime = now
+            pendingTimer = Timer.scheduledTimer(withTimeInterval: doubleTapInterval, repeats: false) { [weak self] _ in
+                self?.lastTapTime = nil
+                self?.onSingleTap()
+            }
+        }
     }
 
     // MARK: - Key Code Helpers
@@ -126,7 +157,7 @@ final class HotkeyManager {
                 // Check if this is our hotkey
                 if hotKeyID.signature == manager.hotkeyID.signature && hotKeyID.id == manager.hotkeyID.id {
                     DispatchQueue.main.async {
-                        manager.callback()
+                        manager.handleHotkeyPressed()
                     }
                     return noErr
                 }

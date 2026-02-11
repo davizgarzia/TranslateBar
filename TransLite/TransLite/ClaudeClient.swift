@@ -101,6 +101,84 @@ final class ClaudeClient {
             throw ClaudeError.unknownError(httpResponse.statusCode)
         }
     }
+
+    /// Improves text grammar and clarity using the Claude API
+    /// - Parameters:
+    ///   - text: The text to improve
+    ///   - apiKey: The Anthropic API key
+    /// - Returns: The improved text
+    func improve(text: String, apiKey: String) async throws -> String {
+        let systemPrompt = """
+        You are a writing assistant that improves text.
+
+        Return ONLY the improved text.
+
+        Rules:
+        - Fix grammar, spelling, and punctuation errors
+        - Improve clarity and readability
+        - Keep the same language as the input (do NOT translate)
+        - Preserve the original meaning and intent
+        - Preserve formatting (line breaks, lists, etc.)
+        - Do NOT add quotes, markdown, or wrappers
+        - Do NOT add emojis unless present in original
+        - Keep the same tone (formal/casual)
+        - Make minimal changes - only fix what needs fixing
+        """
+
+        let userPrompt = """
+        Improve this text:
+
+        \(text)
+        """
+
+        let requestBody = ClaudeRequest(
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2048,
+            system: systemPrompt,
+            messages: [
+                ClaudeMessage(role: "user", content: userPrompt)
+            ]
+        )
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        request.timeoutInterval = 30
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            let decoded = try JSONDecoder().decode(ClaudeResponse.self, from: data)
+            guard let textBlock = decoded.content.first(where: { $0.type == "text" }),
+                  let content = textBlock.text else {
+                throw ClaudeError.emptyResponse
+            }
+            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        case 401:
+            throw ClaudeError.invalidAPIKey
+
+        case 429:
+            throw ClaudeError.rateLimited
+
+        case 500...599:
+            throw ClaudeError.serverError
+
+        default:
+            if let errorResponse = try? JSONDecoder().decode(ClaudeErrorResponse.self, from: data) {
+                throw ClaudeError.apiError(errorResponse.error.message)
+            }
+            throw ClaudeError.unknownError(httpResponse.statusCode)
+        }
+    }
 }
 
 // MARK: - Request/Response Models

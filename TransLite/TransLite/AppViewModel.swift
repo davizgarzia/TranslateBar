@@ -432,6 +432,108 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func improveText() {
+        guard !isTranslating else {
+            statusMessage = "Operation in progress..."
+            return
+        }
+
+        // Check trial/license status and sync UI
+        refreshTrialStatus()
+        guard trialManager.canUseApp else {
+            statusMessage = "Trial expired - please activate license"
+            return
+        }
+
+        // Get API key based on selected provider
+        let apiKey: String
+        switch apiProvider {
+        case .openai:
+            guard hasAPIKey, let key = keychain.getAPIKey() else {
+                statusMessage = "No OpenAI API key configured"
+                return
+            }
+            apiKey = key
+        case .claude:
+            guard hasClaudeAPIKey, let key = keychain.getClaudeAPIKey() else {
+                statusMessage = "No Claude API key configured"
+                return
+            }
+            apiKey = key
+        }
+
+        isTranslating = true
+        hud.show(message: "Copying...")
+
+        // Auto-copy selected text if we have accessibility permission
+        if accessibility.hasAccessibilityPermission {
+            accessibility.simulateCopy()
+        }
+
+        Task {
+            // Delay to allow clipboard to update after copy
+            try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
+
+            guard let text = clipboard.readText() else {
+                statusMessage = "No text selected"
+                hud.hide()
+                isTranslating = false
+                return
+            }
+
+            statusMessage = "Improving..."
+            hud.update(message: "Improving...")
+
+            do {
+                let improved: String
+                switch apiProvider {
+                case .openai:
+                    improved = try await openAI.improve(
+                        text: text,
+                        apiKey: apiKey
+                    )
+                case .claude:
+                    improved = try await claude.improve(
+                        text: text,
+                        apiKey: apiKey
+                    )
+                }
+
+                // Write to clipboard
+                if clipboard.writeText(improved) {
+                    statusMessage = "Improved successfully"
+
+                    // Auto-paste if enabled and has permission
+                    if autoPasteEnabled {
+                        // Refresh permission status
+                        hasAccessibilityPermission = accessibility.hasAccessibilityPermission
+
+                        if hasAccessibilityPermission {
+                            hud.update(message: "Pasting...")
+                            // Small delay to ensure clipboard is set
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                            if accessibility.simulatePaste() {
+                                statusMessage = "Improved & pasted"
+                            } else {
+                                statusMessage = "Improved (paste failed)"
+                            }
+                        } else {
+                            statusMessage = "Improved (no paste permission)"
+                        }
+                    }
+                } else {
+                    statusMessage = "Failed to write clipboard"
+                }
+
+            } catch {
+                statusMessage = error.localizedDescription
+            }
+
+            hud.hide()
+            isTranslating = false
+        }
+    }
+
     // MARK: - Accessibility
 
     func refreshAccessibilityStatus() {
